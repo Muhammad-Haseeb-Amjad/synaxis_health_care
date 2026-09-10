@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Doctors Overview - Synaxis Health</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#060e20",
+                      "outline-variant": "#3c4a42",
+                      "on-primary": "#003824",
+                      "surface-container-low": "#131b2e",
+                      "on-primary-fixed-variant": "#005236",
+                      "on-secondary-fixed-variant": "#5516be",
+                      "on-error-container": "#ffdad6",
+                      "error": "#ffb4ab",
+                      "on-secondary": "#3c0091",
+                      "on-primary-container": "#00422b",
+                      "outline": "#86948a",
+                      "on-tertiary-fixed": "#001e2f",
+                      "tertiary-fixed": "#c9e6ff",
+                      "surface-tint": "#4edea3",
+                      "on-primary-fixed": "#002113",
+                      "on-tertiary": "#00344d",
+                      "error-container": "#93000a",
+                      "on-tertiary-container": "#003d59",
+                      "surface-bright": "#31394d",
+                      "on-surface": "#dae2fd",
+                      "tertiary-fixed-dim": "#89ceff",
+                      "primary-fixed": "#6ffbbe",
+                      "primary-fixed-dim": "#4edea3",
+                      "on-tertiary-fixed-variant": "#004c6e",
+                      "secondary-fixed": "#e9ddff",
+                      "primary": "#4edea3",
+                      "on-secondary-fixed": "#23005c",
+                      "tertiary": "#89ceff",
+                      "secondary-fixed-dim": "#d0bcff",
+                      "inverse-primary": "#006c49",
+                      "surface-variant": "#2d3449",
+                      "inverse-surface": "#dae2fd",
+                      "secondary": "#d0bcff",
+                      "inverse-on-surface": "#283044",
+                      "background": "#0b1326",
+                      "tertiary-container": "#23acf1",
+                      "surface-dim": "#0b1326",
+                      "on-error": "#690005",
+                      "on-surface-variant": "#bbcabf",
+                      "surface-container": "#171f33",
+                      "surface-container-highest": "#2d3449",
+                      "secondary-container": "#571bc1",
+                      "surface-container-high": "#222a3d",
+                      "primary-container": "#10b981",
+                      "on-background": "#dae2fd",
+                      "surface": "#0b1326",
+                      "on-secondary-container": "#c4abff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin_mobile": "16px",
+                      "base_unit": "8px",
+                      "gutter": "24px",
+                      "container_max_width": "1440px",
+                      "margin_desktop": "40px",
+                      "sidebar_width": "280px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Manrope"],
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "headline-lg": ["Manrope"],
+                      "headline-md": ["Manrope"],
+                      "headline-sm": ["Manrope"],
+                      "label-md": ["Inter"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        /* Base Styles & Utilities */
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glow-hover:hover {
+            box-shadow: 0 0 20px theme('colors.primary/0.3');
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px theme('colors.primary/0.5');
+        }
+
+        /* Custom Scrollbar for table */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Table Row Hover Gradient */
+        .table-row-hover:hover {
+             background: linear-gradient(90deg, rgba(78, 222, 163, 0.05) 0%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="flex min-h-screen font-body-md overflow-x-hidden">
+<!-- JSON Component: SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar_width bg-surface-container/80 backdrop-blur-xl border-r border-white/10 shadow-2xl shadow-secondary-fixed/5 flex flex-col z-50 md:flex hidden">
+<div class="p-6 pb-2 border-b border-white/5">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">local_hospital</span>
+</div>
+<div>
+<h1 class="font-display-lg text-headline-sm font-extrabold text-primary tracking-tighter">Synaxis Health</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Admin Terminal</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto p-4 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined transition-colors group-hover:text-primary">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<!-- Active State -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 text-primary border-l-4 border-primary transition-all duration-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+<span class="font-label-md text-label-md font-semibold">Doctors</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined transition-colors group-hover:text-primary">group</span>
+<span class="font-label-md text-label-md">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined transition-colors group-hover:text-primary">handshake</span>
+<span class="font-label-md text-label-md">Partnership</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined transition-colors group-hover:text-primary">shopping_cart</span>
+<span class="font-label-md text-label-md">Purchase Orders</span>
+</a>
+</nav>
+<div class="p-4 border-t border-white/5 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-white/5 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-error hover:bg-error/10 transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-error">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-sidebar_width flex flex-col min-h-screen relative">
+<!-- Ambient Background Effect -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px]"></div>
+<div class="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[100px]"></div>
+</div>
+<!-- JSON Component: TopNavBar -->
+<header class="fixed top-0 right-0 w-full md:w-[calc(100%-280px)] h-16 bg-background/60 backdrop-blur-md border-b border-white/5 z-40 flex justify-between items-center px-margin_mobile md:px-margin_desktop">
+<!-- Mobile Menu Toggle (Visible only on mobile) -->
+<button class="md:hidden text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<!-- Search Bar -->
+<div class="flex-1 max-w-md mx-4 md:mx-0">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors text-sm">search</span>
+<input class="w-full bg-surface-container/50 border border-white/10 rounded-full py-2 pl-10 pr-4 font-body-sm text-body-sm text-on-surface placeholder-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-inner bg-transparent" placeholder="Search doctors, ID, or location..." type="text"/>
+</div>
+</div>
+<!-- Actions & Profile -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full animate-pulse"></span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors hidden sm:block">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-white/20 overflow-hidden cursor-pointer hover:border-primary transition-colors">
+<img class="w-full h-full object-cover" data-alt="A close up, high resolution portrait of a professional healthcare administrator in a softly lit, modern glass office. The lighting is cool and sophisticated, with subtle teal undertones reflecting off glass surfaces. The person exudes calm authority and competence, wearing professional attire. The overall mood is high-tech, reliable, and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNHeCkbKvXEoLj7vey17iP00nGPhoqIf9M9hRnucxUxaJ8fzMgLoTdGYcTEWkRUxE4tp3NonXneGkRpyAEPELpvpaQcEth8dztVm5da5DkPqU5VaJj1Pff9vjNxPBjGmpjv21ffFLVNmjopt2QF_KHor5ZMMPdEGG44EmhzP1XOia8ey-4HrenZ4y15RjnFPeyjnQxWksUHGXbWDvzDUOFbm_BVIeSn6nSmlHeDxhqL4KFU3fdHqKM"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="pt-24 px-margin_mobile md:px-margin_desktop pb-12 w-full max-w-container_max_width mx-auto flex-1 flex flex-col gap-gutter">
+<!-- Header Section with KPI Cards -->
+<div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl">stethoscope</span>
+                        Doctors Overview
+                    </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Monitor performance and ledger activity across the network.</p>
+</div>
+<!-- KPI Dashboard - Glassmorphic -->
+<div class="glass-panel rounded-xl p-2 flex flex-wrap sm:flex-nowrap gap-2 w-full xl:w-auto">
+<div class="flex-1 sm:w-auto px-4 py-3 flex items-center gap-4 bg-white/5 rounded-lg border border-white/5">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Total Doctors</p>
+<p class="font-headline-sm text-headline-sm text-on-surface glow-text">2,458</p>
+</div>
+</div>
+<div class="hidden sm:block w-px bg-white/10 my-2"></div>
+<div class="flex-1 sm:w-auto px-4 py-3 flex items-center gap-4 bg-white/5 rounded-lg border border-white/5">
+<div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center border border-secondary/20">
+<span class="material-symbols-outlined text-secondary">account_balance_wallet</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Req. Business</p>
+<p class="font-headline-sm text-headline-sm text-on-surface">Rs 12.5M</p>
+</div>
+</div>
+<div class="hidden sm:block w-px bg-white/10 my-2"></div>
+<div class="flex-1 sm:w-auto px-4 py-3 flex items-center gap-4 bg-white/5 rounded-lg border border-white/5">
+<div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+<span class="material-symbols-outlined text-emerald-400">trending_up</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-0.5">Achieved</p>
+<p class="font-headline-sm text-headline-sm text-emerald-400 font-bold">68%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Toolbar & Table Container -->
+<div class="glass-panel rounded-xl flex flex-col flex-1 overflow-hidden relative">
+<!-- Table Toolbar -->
+<div class="p-4 border-b border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-container-low/50">
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<!-- Filters -->
+<div class="relative group flex-1 sm:flex-none">
+<select class="w-full sm:w-40 appearance-none bg-surface-container/50 border border-white/10 rounded-lg py-2 pl-4 pr-10 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors">
+<option>All Specialties</option>
+<option>Cardiology</option>
+<option>Neurology</option>
+<option>Orthopedics</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+<div class="relative group flex-1 sm:flex-none">
+<select class="w-full sm:w-36 appearance-none bg-surface-container/50 border border-white/10 rounded-lg py-2 pl-4 pr-10 font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary/50 transition-colors">
+<option>Status: All</option>
+<option>On Track</option>
+<option>At Risk</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+<button class="px-4 py-2 rounded-lg font-label-md text-label-md border border-white/10 text-on-surface hover:bg-white/5 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span>
+                            Export
+                        </button>
+<button class="px-5 py-2 rounded-lg font-label-md text-label-md bg-gradient-to-r from-primary to-emerald-500 text-on-primary font-bold shadow-[0_0_15px_rgba(78,222,163,0.4)] hover:shadow-[0_0_25px_rgba(78,222,163,0.6)] hover:-translate-y-0.5 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm font-bold">add</span>
+                            Add New
+                        </button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-white/10 bg-surface-container-lowest/30">
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-16">Sr#</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Doctor Name</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Required Business</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Business Achieved</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Remaining</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-48">Progress</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-right">Action</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface divide-y divide-white/5">
+<!-- Row 1: High Achievement -->
+<tr class="table-row-hover transition-colors group">
+<td class="py-4 px-6 text-on-surface-variant">01</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center text-primary font-bold text-xs border border-white/10">AS</div>
+<div>
+<p class="font-medium text-on-surface">Dr. Aisha Sharma</p>
+<p class="text-xs text-on-surface-variant">Cardiology</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">Rs 2,500,000</td>
+<td class="py-4 px-6 text-emerald-400 font-medium">Rs 2,100,000</td>
+<td class="py-4 px-6 text-on-surface-variant">Rs 400,000</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-bright rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full relative" style="width: 84%">
+<div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+</div>
+</div>
+<span class="text-xs font-medium text-emerald-400 w-8 text-right">84%</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors font-label-md text-[10px] uppercase tracking-wider flex items-center gap-1 ml-auto group-hover:border-primary">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+                                        View Ledger
+                                    </button>
+</td>
+</tr>
+<!-- Row 2: Medium Achievement -->
+<tr class="table-row-hover transition-colors group">
+<td class="py-4 px-6 text-on-surface-variant">02</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center text-tertiary font-bold text-xs border border-white/10">RJ</div>
+<div>
+<p class="font-medium text-on-surface">Dr. Rajesh Joshi</p>
+<p class="text-xs text-on-surface-variant">Neurology</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">Rs 1,800,000</td>
+<td class="py-4 px-6 text-yellow-400 font-medium">Rs 1,080,000</td>
+<td class="py-4 px-6 text-on-surface-variant">Rs 720,000</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-bright rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full" style="width: 60%"></div>
+</div>
+<span class="text-xs font-medium text-yellow-400 w-8 text-right">60%</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors font-label-md text-[10px] uppercase tracking-wider flex items-center gap-1 ml-auto group-hover:border-primary">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+                                        View Ledger
+                                    </button>
+</td>
+</tr>
+<!-- Row 3: Low Achievement -->
+<tr class="table-row-hover transition-colors group">
+<td class="py-4 px-6 text-on-surface-variant">03</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center text-error font-bold text-xs border border-white/10">MK</div>
+<div>
+<p class="font-medium text-on-surface">Dr. Mira Kapoor</p>
+<p class="text-xs text-on-surface-variant">Orthopedics</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">Rs 3,200,000</td>
+<td class="py-4 px-6 text-error font-medium">Rs 800,000</td>
+<td class="py-4 px-6 text-on-surface-variant">Rs 2,400,000</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-bright rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-gradient-to-r from-red-600 to-error rounded-full" style="width: 25%"></div>
+</div>
+<span class="text-xs font-medium text-error w-8 text-right">25%</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors font-label-md text-[10px] uppercase tracking-wider flex items-center gap-1 ml-auto group-hover:border-primary">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+                                        View Ledger
+                                    </button>
+</td>
+</tr>
+<!-- Row 4: High Achievement -->
+<tr class="table-row-hover transition-colors group">
+<td class="py-4 px-6 text-on-surface-variant">04</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center text-secondary font-bold text-xs border border-white/10">VK</div>
+<div>
+<p class="font-medium text-on-surface">Dr. Vikram Kumar</p>
+<p class="text-xs text-on-surface-variant">General Surgery</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">Rs 1,500,000</td>
+<td class="py-4 px-6 text-emerald-400 font-medium">Rs 1,380,000</td>
+<td class="py-4 px-6 text-on-surface-variant">Rs 120,000</td>
+<td class="py-4 px-6">
+<div class="flex items-center gap-2">
+<div class="flex-1 h-2 bg-surface-bright rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-gradient-to-r from-emerald-500 to-primary rounded-full relative" style="width: 92%"></div>
+</div>
+<span class="text-xs font-medium text-emerald-400 w-8 text-right">92%</span>
+</div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-colors font-label-md text-[10px] uppercase tracking-wider flex items-center gap-1 ml-auto group-hover:border-primary">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+                                        View Ledger
+                                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="p-4 border-t border-white/10 bg-surface-container-lowest/30 flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<p>Showing 1 to 4 of 2,458 entries</p>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-primary/20 text-primary border border-primary/30 font-medium">1</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors">2</button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors">3</button>
+<span class="px-1">...</span>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-white/5 border border-transparent hover:border-white/10 transition-colors">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
