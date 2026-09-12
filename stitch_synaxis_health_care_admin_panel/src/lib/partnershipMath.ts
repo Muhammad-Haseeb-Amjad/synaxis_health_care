@@ -47,10 +47,12 @@ export function groupTotals(rows: PartnershipSale[], commissionRate = DEFAULT_DI
 
 export function partnershipSettlement(groupAProfit: number, groupBProfit: number, expenses: number, partner1Name: string, partner2Name: string) {
   const combinedProfit = groupAProfit + groupBProfit
+  const rawProfitShare = combinedProfit / 2
+  const expenseShare = expenses / 2
   const netDistributableProfit = combinedProfit - expenses
-  const fairShareEach = netDistributableProfit / 2
-  const partner1TakeHome = groupAProfit - expenses / 2
-  const partner2TakeHome = groupBProfit - expenses / 2
+  const fairShareEach = rawProfitShare - expenseShare
+  const partner1TakeHome = groupAProfit - expenseShare
+  const partner2TakeHome = groupBProfit - expenseShare
   const partner1Adjustment = fairShareEach - partner1TakeHome
   const partner2Adjustment = fairShareEach - partner2TakeHome
   const amount = Math.abs(partner1Adjustment).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -59,7 +61,7 @@ export function partnershipSettlement(groupAProfit: number, groupBProfit: number
     : partner1Adjustment < 0
       ? `${partner2Name} should receive Rs ${amount} from ${partner1Name}`
       : 'Profit is already equal - no settlement needed.'
-  return { combinedProfit, netDistributableProfit, fairShareEach, partner1TakeHome, partner2TakeHome, partner1Adjustment, partner2Adjustment, message }
+  return { combinedProfit, rawProfitShare, expenseShare, netDistributableProfit, fairShareEach, partner1TakeHome, partner2TakeHome, partner1Adjustment, partner2Adjustment, message }
 }
 
 export function settlementWithExpenseReimbursement(partner1Adjustment: number, partner2PaidExpenses: number) {
