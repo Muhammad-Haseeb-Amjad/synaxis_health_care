@@ -1,27 +1,18 @@
-import type { jsPDF } from 'jspdf'
-
-function pdfSignature(bytes: Uint8Array) {
-  return new TextDecoder('ascii').decode(bytes.slice(0, 5))
-}
+﻿import type { jsPDF } from 'jspdf'
 
 export async function sharePdf(doc: jsPDF, filename: string, _phone: string | null | undefined, message: string) {
+  // jsPDF produces the Blob synchronously. Do not await before navigator.share:
+  // mobile browsers require the call to retain the originating user activation.
   const generatedBlob = doc.output('blob')
-  const bytes = new Uint8Array(await generatedBlob.arrayBuffer())
-  const signature = pdfSignature(bytes)
-
-  if (!bytes.byteLength || signature !== '%PDF-') {
-    console.error('[PDF share] Generated document is invalid', { filename, byteLength: bytes.byteLength, signature })
+  if (!generatedBlob.size || generatedBlob.type !== 'application/pdf') {
     throw new Error('The PDF could not be generated correctly. Please try again.')
   }
 
-  // Build the shared file from fully-read bytes so the browser receives a stable,
-  // complete payload rather than a lazily consumed Blob.
-  const file = new File([bytes], filename, { type: 'application/pdf', lastModified: Date.now() })
+  const file = new File([generatedBlob], filename, { type: 'application/pdf', lastModified: Date.now() })
   const diagnostics = {
     name: file.name,
     size: file.size,
     type: file.type,
-    signature,
     standalone: window.matchMedia('(display-mode: standalone)').matches,
     userAgent: navigator.userAgent,
   }
@@ -30,6 +21,7 @@ export async function sharePdf(doc: jsPDF, filename: string, _phone: string | nu
     const startedAt = performance.now()
     console.info('[PDF share] Calling navigator.share', diagnostics)
     try {
+      // This is deliberately the first asynchronous boundary in this function.
       await navigator.share({ files: [file], title: filename, text: message })
       console.info('[PDF share] navigator.share resolved', { ...diagnostics, elapsedMs: Math.round(performance.now() - startedAt) })
       return 'shared' as const
@@ -53,6 +45,6 @@ export async function sharePdf(doc: jsPDF, filename: string, _phone: string | nu
   anchor.click()
   anchor.remove()
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
-  window.alert('PDF downloaded — open WhatsApp and attach it manually. This browser cannot share PDF files directly.')
+  window.alert('PDF downloaded - open WhatsApp and attach it manually. This browser cannot share PDF files directly.')
   return 'downloaded' as const
 }

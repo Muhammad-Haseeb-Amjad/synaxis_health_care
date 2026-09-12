@@ -1,10 +1,10 @@
 ﻿import type { jsPDF } from 'jspdf'
+import { supabase } from './supabaseClient'
 
 export type CompanySettings = { id?: string; company_name: string; admin_name: string | null; phone: string | null; email: string | null; logo_url: string | null; address: string | null; distributor_commission_percent?: number | string; warranty_authorized_person?: string | null; warranty_business_address?: string | null }
 export const defaultCompanySettings: CompanySettings = { company_name: 'Synaxis Health Care', admin_name: null, phone: null, email: null, logo_url: null, address: null, distributor_commission_percent: 10 }
 
 export async function getCompanySettings() {
-  const { supabase } = await import('./supabaseClient')
   const { data, error } = await supabase.from('company_settings').select('*').limit(1).maybeSingle()
   if (error) throw error
   return (data as CompanySettings | null) ?? defaultCompanySettings
