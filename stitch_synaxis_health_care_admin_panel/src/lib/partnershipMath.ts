@@ -62,6 +62,10 @@ export function partnershipSettlement(groupAProfit: number, groupBProfit: number
   return { combinedProfit, netDistributableProfit, fairShareEach, partner1TakeHome, partner2TakeHome, partner1Adjustment, partner2Adjustment, message }
 }
 
+export function settlementWithExpenseReimbursement(partner1Adjustment: number, partner2PaidExpenses: number) {
+  const partner2Reimbursement = Math.max(0, partner2PaidExpenses) / 2
+  return { partner2Reimbursement, finalPartner1Adjustment: partner1Adjustment - partner2Reimbursement }
+}
 export function requiredDoctorBusiness(givenAmount: unknown, percentage: unknown) {
   if (givenAmount === '' || givenAmount === null || givenAmount === undefined || percentage === '' || percentage === null || percentage === undefined) return null
   const given = Number(givenAmount)
