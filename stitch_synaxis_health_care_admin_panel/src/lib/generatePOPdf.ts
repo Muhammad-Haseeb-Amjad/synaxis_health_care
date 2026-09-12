@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf'
+﻿import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { asNumber, money, shortDate } from './format'
 import { drawBrandHeader, type CompanySettings } from './pdfBranding'

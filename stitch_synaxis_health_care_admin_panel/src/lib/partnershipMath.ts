@@ -1,4 +1,4 @@
-import { asNumber } from './format'
+﻿import { asNumber } from './format'
 
 export type PartnershipSale = {
   id: string

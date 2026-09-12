@@ -1,5 +1,18 @@
 ﻿import type { jsPDF } from 'jspdf'
 
+
+export function downloadPdf(doc: jsPDF, filename: string) {
+  const blob = doc.output('blob')
+  if (!blob.size || blob.type !== 'application/pdf') throw new Error('The PDF could not be generated correctly. Please try again.')
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
 export async function sharePdf(doc: jsPDF, filename: string, _phone: string | null | undefined, message: string) {
   // jsPDF produces the Blob synchronously. Do not await before navigator.share:
   // mobile browsers require the call to retain the originating user activation.

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Activity, Building2, ChevronRight, Handshake, Plus, ReceiptText, ShoppingCart, Stethoscope, TrendingUp, Users, WalletCards } from 'lucide-react'

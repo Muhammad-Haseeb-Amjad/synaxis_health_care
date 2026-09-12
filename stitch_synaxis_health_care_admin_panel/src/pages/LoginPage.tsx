@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, Download, Eye, EyeOff, LoaderCircle, Share2, ShieldCheck } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -121,7 +121,7 @@ export function LoginPage() {
             {errors.password && <span className="mt-1.5 block text-body-sm normal-case tracking-normal text-error">{errors.password.message}</span>}
           </label>
         </div>
-        <button disabled={!isValid || isSubmitting} className="primary-button mt-7 flex w-full items-center justify-center gap-2 py-3.5">{isSubmitting ? <LoaderCircle className="animate-spin" size={19} /> : <ShieldCheck size={19} />}{isSubmitting ? 'Signing in…' : 'Secure sign in'}</button>
+        <button disabled={!isValid || isSubmitting} className="primary-button mt-7 flex w-full items-center justify-center gap-2 py-3.5">{isSubmitting ? <LoaderCircle className="animate-spin" size={19} /> : <ShieldCheck size={19} />}{isSubmitting ? 'Signing in...' : 'Secure sign in'}</button>
         <InstallAppButton />
         <p className="mt-6 text-center text-label-sm text-on-surface-variant/80">Protected by Supabase authentication</p>
       </form>
