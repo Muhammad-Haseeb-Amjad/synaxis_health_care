@@ -27,10 +27,23 @@ export async function generateWarrantyPdf(data:WarrantyData,company:CompanySetti
  const person='Ihsan Ul Allah Shahid',address=data.businessAddress||company.warranty_business_address||company.address||'[address]';const clause=`WARRANTY under section 23(1)(i) of the Drug Act 1976. ${person}, being a person resident in Pakistan carrying on business at ${address} under the name AXIM HEALTH CARE and being an authorised agent of the drugs, do hereby give this warranty that the drug sold by us do not contravene in any way the provisions of section 23 of the drug act 1976.`
  // Keep the larger warranty copy inside the invoice's 11 mm side margins.
  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('WARRANTY',11,237)
- doc.setFontSize(8.5)
- const clauseLines=doc.splitTextToSize(clause,188)
- doc.text(clauseLines,11,242,{lineHeightFactor:1.2})
- const notesY=242+(clauseLines.length-1)*8.5*1.2/ doc.internal.scaleFactor+6
+ // Measure each run in its actual font so the emphasized name wraps within the margins.
+ const [beforeName,afterName]=clause.split(person)
+ const runs=[
+  ...beforeName.trimEnd().split(/\s+/).map(text=>({text,bold:false})),
+  {text:person+',',bold:true},
+  ...afterName.replace(/^,\s*/, '').split(/\s+/).map(text=>({text,bold:false})),
+ ]
+ let textX=11,textY=242
+ const lineHeight=9.5*1.2/doc.internal.scaleFactor
+ for(const run of runs){
+  doc.setFont('helvetica',run.bold?'bold':'normal');doc.setFontSize(run.bold?9.5:8.5)
+  const width=doc.getTextWidth(run.text)
+  if(textX+width>199){textX=11;textY+=lineHeight}
+  doc.text(run.text,textX,textY)
+  textX+=width+doc.getTextWidth(' ')
+ }
+ const notesY=textY+6
  doc.setFont('helvetica','normal');doc.setFontSize(6.5)
  const notes=[
   'Note: For dated items we must be informed six months prior to expiry.',
