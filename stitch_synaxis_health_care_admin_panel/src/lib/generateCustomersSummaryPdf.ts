@@ -42,6 +42,10 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
   doc.setFontSize(11)
   doc.setTextColor(71, 85, 105)
   doc.text(monthName.toUpperCase(), 14, 44)
+  const totalDebit = rows.reduce((sum, row) => sum + row.debit, 0)
+  const totalCredit = rows.reduce((sum, row) => sum + row.credit, 0)
+  const totalNet = rows.reduce((sum, row) => sum + row.net, 0)
+
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
@@ -53,8 +57,10 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
       row.credit ? money(row.credit) : '-', 
       row.net ? money(row.net) : '-'
     ]),
+    foot: [['', 'TOTAL SUMMARY', money(totalDebit), money(totalCredit), money(totalNet)]],
     theme: 'grid',
     headStyles: { fillColor: [5, 15, 30], textColor: [255, 255, 255] },
+    footStyles: { fillColor: [5, 15, 30], textColor: [255, 255, 255], fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [241, 245, 249] },
     columnStyles: { 
       0: { cellWidth: 15, halign: 'center' }, 
@@ -63,20 +69,6 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
       4: { halign: 'right', fontStyle: 'bold' } 
     },
   })
-  
-  const totalRecovery = rows.reduce((sum, row) => sum + row.credit, 0)
-  const end = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
-  const barLeft = 14
-  const barRight = 196
-  const barHeight = 12
-  const textY = end + 7.5
-  doc.setFillColor(5, 15, 30)
-  doc.rect(barLeft, end, barRight - barLeft, barHeight, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.text('TOTAL RECOVERY', barLeft + 6, textY)
-  doc.text(money(totalRecovery), barRight - 4, textY, { align: 'right' })
   
   return doc
 }
