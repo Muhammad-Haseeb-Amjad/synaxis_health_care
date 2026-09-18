@@ -37,7 +37,11 @@ export type MonthlySummaryRow = { name: string; debit: number; credit: number; n
 
 export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], monthName: string, company: CompanySettings) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-  await drawBrandHeader(doc, company, `MONTHLY SUMMARY - ${monthName.toUpperCase()}`)
+  await drawBrandHeader(doc, company, 'MONTHLY SUMMARY')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(71, 85, 105)
+  doc.text(monthName.toUpperCase(), 14, 44)
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
