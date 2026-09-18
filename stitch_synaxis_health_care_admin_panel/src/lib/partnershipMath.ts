@@ -68,6 +68,12 @@ export function settlementWithExpenseReimbursement(partner1Adjustment: number, p
   const partner2Reimbursement = Math.max(0, partner2PaidExpenses) / 2
   return { partner2Reimbursement, finalPartner1Adjustment: partner1Adjustment - partner2Reimbursement }
 }
+
+export function settlementAfterDraws(partner1Adjustment: number, partner1Draws: number, partner2Draws: number) {
+  // Positive means partner 1 receives; draws already paid reduce the recipient's balance.
+  const remaining = partner1Adjustment - partner1Draws + partner2Draws
+  return Math.round(remaining * 100) / 100
+}
 export function requiredDoctorBusiness(givenAmount: unknown, percentage: unknown) {
   if (givenAmount === '' || givenAmount === null || givenAmount === undefined || percentage === '' || percentage === null || percentage === undefined) return null
   const given = Number(givenAmount)
