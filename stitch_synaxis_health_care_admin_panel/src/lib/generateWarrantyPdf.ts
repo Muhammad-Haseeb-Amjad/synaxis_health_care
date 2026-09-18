@@ -24,9 +24,23 @@ export async function generateWarrantyPdf(data:WarrantyData,company:CompanySetti
  doc.setFontSize(5.5);totals.forEach(([label,value],i)=>{const x=left+i*cw;doc.setFillColor(198,198,198);doc.rect(x,ty,cw,4.5,'FD');doc.rect(x,ty+4.5,cw,7,'S');doc.setFont('helvetica','normal');doc.text(label,x+cw/2,ty+3.2,{align:'center'});doc.text(amt(num(value)),x+cw-1,ty+9,{align:'right'})})
  const nl=left+totals.length*cw;doc.rect(nl,ty,48,11.5,'S');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.text('NetAmount:',nl+3,ty+7.2);doc.setFontSize(9);doc.text(amt(net),nl+45,ty+7.2,{align:'right'})
  doc.setFont('helvetica','bold');doc.setFontSize(6);doc.text(`NO.OFITEMS:                 ${data.items.length}`,11,228);doc.setLineWidth(.25);doc.line(11,231,199,231)
- const person=data.authorizedPerson||company.warranty_authorized_person||company.admin_name||'[Authorized person name]',address=data.businessAddress||company.warranty_business_address||company.address||'[address]';const clause=`WARRANTY under section 23(1)(i) of the Drug Act 1976. ${person}, being a person resident in Pakistan carrying on business at ${address} under the name AXIM HEALTH CARE and being an authorised agent of the drugs, do hereby give this warranty that the drug sold by us do not contravene in any way the provisions of section 23 of the drug act 1976.`
- doc.setFontSize(6);doc.text('WARRANTY',11,236);doc.setFont('helvetica','normal');doc.setFontSize(5.2);doc.text(doc.splitTextToSize(clause,137),11,240);doc.text('Note: For dated items we must be informed six months prior to expiry.',11,253);doc.text('Note: Herbal, Food, Unani, Cosmetic, Nutritional & Hemoproducts do not fall under this warranty.',11,257)
- try{doc.addImage(await imageData('/assets/image.png'),'PNG',22,259,83,12,undefined,'FAST')}catch{}
- const sc=172;try{doc.addImage(await imageData('/assets/signature.png'),'PNG',sc-19,247,38,15,undefined,'FAST')}catch{}doc.line(sc-22,264,sc+22,264);doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.text('For',sc-24,268);doc.setFont('helvetica','bold');doc.text(company.company_name.replace(/\s+/g,'').toUpperCase(),sc,268,{align:'center'})
- doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);doc.setFontSize(5.5);doc.text(`Printed: ${new Date().toLocaleString('en-PK')}`,11,284);return doc
+ const person='Ihsan Ul Allah Shahid',address=data.businessAddress||company.warranty_business_address||company.address||'[address]';const clause=`WARRANTY under section 23(1)(i) of the Drug Act 1976. ${person}, being a person resident in Pakistan carrying on business at ${address} under the name AXIM HEALTH CARE and being an authorised agent of the drugs, do hereby give this warranty that the drug sold by us do not contravene in any way the provisions of section 23 of the drug act 1976.`
+ // Keep the larger warranty copy inside the invoice's 11 mm side margins.
+ doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('WARRANTY',11,237)
+ doc.setFontSize(8.5)
+ const clauseLines=doc.splitTextToSize(clause,188)
+ doc.text(clauseLines,11,242,{lineHeightFactor:1.2})
+ const notesY=242+(clauseLines.length-1)*8.5*1.2/ doc.internal.scaleFactor+6
+ doc.setFont('helvetica','normal');doc.setFontSize(6.5)
+ const notes=[
+  'Note: For dated items we must be informed six months prior to expiry.',
+  'Note: Herbal, Food, Unani, Cosmetic, Nutritional & Hemoproducts do not fall under this warranty.',
+ ]
+ let nextY=notesY
+ for(const note of notes){const lines=doc.splitTextToSize(note,137);doc.text(lines,11,nextY);nextY+=lines.length*3+1}
+ try{doc.addImage(await imageData('/assets/image.png'),'PNG',22,nextY,94,13.6,undefined,'FAST')}catch{}
+ const sc=172,signatureY=notesY-2
+ try{doc.addImage(await imageData('/assets/signature.png'),'PNG',sc-19,signatureY,38,15,undefined,'FAST')}catch{}
+ doc.line(sc-22,signatureY+17,sc+22,signatureY+17);doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.text('For',sc-24,signatureY+21);doc.setFont('helvetica','bold');doc.text(company.company_name.replace(/\s+/g,'').toUpperCase(),sc,signatureY+21,{align:'center'})
+ doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);doc.setFontSize(5.5);doc.text(`Printed: ${new Date().toLocaleString('en-PK')}`,11,291);return doc
 }
