@@ -63,5 +63,20 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
       4: { halign: 'right', fontStyle: 'bold' } 
     },
   })
+  
+  const totalRecovery = rows.reduce((sum, row) => sum + row.credit, 0)
+  const end = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
+  const barLeft = 14
+  const barRight = 196
+  const barHeight = 12
+  const textY = end + 7.5
+  doc.setFillColor(5, 15, 30)
+  doc.rect(barLeft, end, barRight - barLeft, barHeight, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.text('TOTAL RECOVERY', barLeft + 6, textY)
+  doc.text(money(totalRecovery), barRight - 4, textY, { align: 'right' })
+  
   return doc
 }
