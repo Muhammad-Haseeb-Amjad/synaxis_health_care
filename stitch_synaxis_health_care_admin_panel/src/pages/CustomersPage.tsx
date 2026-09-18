@@ -12,7 +12,7 @@ import { useRealtimeRefresh } from '../hooks/useRealtimeRefresh'
 import { asNumber, money } from '../lib/format'
 import { supabase } from '../lib/supabaseClient'
 import { usePdfShare } from '../hooks/usePdfShare'
-import { generateCustomersSummaryPdf } from '../lib/generateCustomersSummaryPdf'
+import { generateCustomersSummaryPdf, generateMonthlySummaryPdf } from '../lib/generateCustomersSummaryPdf'
 import { getCompanySettings } from '../lib/pdfBranding'
 import { sharePdf } from '../lib/sharePdf'
 
@@ -83,8 +83,41 @@ export function CustomersPage() {
 }
 
 export function CustomerMonthlySummary({ customers }: { customers: Customer[] }) {
-  const months = Array.from({ length: 12 }, (_, index) => new Date(2000, index).toLocaleString('en', { month: 'short' }))
-  return <div className="mt-8 glass-card rounded-xl p-5"><h3 className="mb-4 font-heading text-headline-sm">Monthly Summary - {new Date().getFullYear()}</h3><div className="overflow-x-auto"><table className="data-table mobile-card-table table-customer-monthly text-xs"><thead><tr><th>Customer</th>{months.map((month) => <th key={month}>{month}<span className="block text-[9px] font-normal">D / C</span></th>)}</tr></thead><tbody>{customers.map((customer) => <tr key={customer.id}><td className="font-medium">{customer.name}</td>{months.map((month, index) => { const rows = customer.customer_ledger.filter((row) => new Date(`${row.entry_date}T00:00:00`).getFullYear() === new Date().getFullYear() && new Date(`${row.entry_date}T00:00:00`).getMonth() === index); const debit = rows.reduce((sum, row) => sum + asNumber(row.debit), 0); const credit = rows.reduce((sum, row) => sum + asNumber(row.credit), 0); return <td key={month} className="whitespace-nowrap"><span className="text-error">{debit ? debit.toLocaleString() : '-'}</span> / <span className="text-primary">{credit ? credit.toLocaleString() : '-'}</span></td> })}</tr>)}</tbody></table></div></div>
+  const { isSharing, runPdfShare } = usePdfShare()
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const year = parseInt(selectedMonth.split('-')[0], 10)
+  const monthIndex = parseInt(selectedMonth.split('-')[1], 10) - 1
+  const monthName = new Date(year, monthIndex).toLocaleString('en', { month: 'long', year: 'numeric' })
+  
+  const summaryRows = useMemo(() => {
+    return customers.map(customer => {
+      const rows = customer.customer_ledger.filter((row) => {
+        const d = new Date(`${row.entry_date}T00:00:00`)
+        return d.getFullYear() === year && d.getMonth() === monthIndex
+      })
+      const debit = rows.reduce((sum, row) => sum + asNumber(row.debit), 0)
+      const credit = rows.reduce((sum, row) => sum + asNumber(row.credit), 0)
+      const net = debit - credit
+      return { id: customer.id, name: customer.name, debit, credit, net }
+    })
+  }, [customers, year, monthIndex])
+
+  const downloadPdf = () => {
+    void runPdfShare(async () => {
+      const company = await getCompanySettings();
+      const doc = await generateMonthlySummaryPdf(summaryRows, monthName, company);
+      doc.save(`monthly-summary-${selectedMonth}.pdf`);
+      return 'downloaded';
+    })
+  }
+
+  return <div className="mt-8 glass-card rounded-xl p-5">
+    <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><h3 className="font-heading text-headline-sm">Monthly Summary - {monthName}</h3><div className="flex gap-3"><input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="input-base px-3 py-2" /><button onClick={downloadPdf} disabled={isSharing} className="secondary-button flex items-center gap-2 px-4 py-2"><Download size={17} />{isSharing ? 'Generating...' : 'Download PDF'}</button></div></div>
+    <div className="overflow-x-auto"><table className="data-table mobile-card-table text-sm"><thead><tr><th>Customer</th><th className="text-right">Debit</th><th className="text-right">Credit</th><th className="text-right">Net Balance</th></tr></thead><tbody>{summaryRows.map((row) => <tr key={row.id}><td className="font-medium">{row.name}</td><td className="text-right text-error">{row.debit ? row.debit.toLocaleString() : '-'}</td><td className="text-right text-primary">{row.credit ? row.credit.toLocaleString() : '-'}</td><td className="text-right font-semibold">{row.net ? row.net.toLocaleString() : '-'}</td></tr>)}</tbody></table></div>
+  </div>
 }
 
 
