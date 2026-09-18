@@ -1,7 +1,7 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowUpDown, Pencil, Plus, Search, Send, Trash2, Users, WalletCards } from 'lucide-react'
+import { ArrowUpDown, Download, Pencil, Plus, Search, Send, Trash2, Users, WalletCards } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Link, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -61,6 +61,7 @@ export function CustomersPage() {
   const rows = useMemo(() => data.filter((row) => `${row.name} ${row.phone ?? ''}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) : balanceOf(b) - balanceOf(a)), [data, search, sort])
   const totalOutstanding = data.reduce((sum, customer) => sum + Math.max(balanceOf(customer), 0), 0)
   const sendSummary = () => { void runPdfShare(async () => { const company = await getCompanySettings(); const summaryRows = data.map((customer) => ({ name: customer.name, phone: customer.phone, balance: balanceOf(customer) })); const doc = await generateCustomersSummaryPdf(summaryRows, totalOutstanding, company); return sharePdf(doc, 'customers-summary.pdf', null, 'Customers account summary from ' + company.company_name) }) }
+  const downloadSummary = () => { void runPdfShare(async () => { const company = await getCompanySettings(); const summaryRows = data.map((customer) => ({ name: customer.name, phone: customer.phone, balance: balanceOf(customer) })); const doc = await generateCustomersSummaryPdf(summaryRows, totalOutstanding, company); doc.save('customers-summary.pdf'); return 'downloaded' }) }
   const remove = async (customer: Customer) => {
     if (!window.confirm(`Delete ${customer.name} and all ledger entries?`)) return
     const { error: deleteError } = await supabase.from('customers').delete().eq('id', customer.id)
@@ -69,7 +70,7 @@ export function CustomersPage() {
   }
 
   return <>
-    <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-md uppercase tracking-widest text-primary">Accounts receivable</p><h2 className="mt-2 font-heading text-headline-lg max-md:text-headline-md">Customers Ledger</h2><p className="mt-2 text-on-surface-variant">Live balances and monthly account activity.</p></div><div className="flex flex-col gap-3 sm:flex-row"><button onClick={sendSummary} disabled={isSharing || !data.length} className="secondary-button flex items-center justify-center gap-2 px-5 py-3"><Send size={18}/>{isSharing ? 'Generating PDF...' : 'Send Summary'}</button><button onClick={() => setParams({ new: '1' })} className="primary-button flex items-center justify-center gap-2 px-5 py-3"><Plus size={18}/>Add customer</button></div></header>
+    <header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-md uppercase tracking-widest text-primary">Accounts receivable</p><h2 className="mt-2 font-heading text-headline-lg max-md:text-headline-md">Customers Ledger</h2><p className="mt-2 text-on-surface-variant">Live balances and monthly account activity.</p></div><div className="flex flex-col gap-3 sm:flex-row"><button onClick={downloadSummary} disabled={isSharing || !data.length} className="secondary-button flex items-center justify-center gap-2 px-5 py-3"><Download size={18}/>{isSharing ? 'Generating...' : 'Download PDF'}</button><button onClick={sendSummary} disabled={isSharing || !data.length} className="secondary-button flex items-center justify-center gap-2 px-5 py-3"><Send size={18}/>{isSharing ? 'Generating...' : 'Send Summary'}</button><button onClick={() => setParams({ new: '1' })} className="primary-button flex items-center justify-center gap-2 px-5 py-3"><Plus size={18}/>Add customer</button></div></header>
     <SummaryBar items={[{ label: 'Total Customers', value: data.length.toLocaleString(), icon: Users }, { label: 'Total Outstanding', value: money(totalOutstanding), icon: WalletCards, tone: 'text-error' }]} />
     <div className="glass-card rounded-xl p-5">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={18}/><input value={search} onChange={(e) => setSearch(e.target.value)} className="input-base w-full rounded-lg py-2.5 pl-10 pr-4" placeholder="Search customers..." /></label><button onClick={() => setSort((value) => value === 'name' ? 'balance' : 'name')} className="secondary-button flex items-center justify-center gap-2"><ArrowUpDown size={17}/>Sort by {sort === 'name' ? 'balance' : 'name'}</button></div>
