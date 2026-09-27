@@ -64,9 +64,11 @@ export function partnershipSettlement(groupAProfit: number, groupBProfit: number
   return { combinedProfit, rawProfitShare, expenseShare, netDistributableProfit, fairShareEach, partner1TakeHome, partner2TakeHome, partner1Adjustment, partner2Adjustment, message }
 }
 
-export function settlementWithExpenseReimbursement(partner1Adjustment: number, partner2PaidExpenses: number) {
+export function settlementWithExpenseReimbursement(partner1Adjustment: number, partner2PaidExpenses: number, partner1PaidExpenses: number) {
+  // Each partner reimburses half of the shared expenses paid by the other.
+  const partner1Reimbursement = Math.max(0, partner1PaidExpenses) / 2
   const partner2Reimbursement = Math.max(0, partner2PaidExpenses) / 2
-  return { partner2Reimbursement, finalPartner1Adjustment: partner1Adjustment - partner2Reimbursement }
+  return { partner1Reimbursement, partner2Reimbursement, finalPartner1Adjustment: partner1Adjustment + partner1Reimbursement - partner2Reimbursement }
 }
 
 export function settlementAfterDraws(partner1Adjustment: number, partner1Draws: number, partner2Draws: number) {
