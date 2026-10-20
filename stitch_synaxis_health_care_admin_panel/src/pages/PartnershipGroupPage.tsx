@@ -1,7 +1,7 @@
-﻿import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Handshake, Pencil, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { ArrowDownToLine, ArrowLeft, Handshake, Pencil, Plus, Trash2, TrendingUp } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -13,6 +13,9 @@ import { asNumber, money } from '../lib/format'
 import { DEFAULT_DISTRIBUTOR_COMMISSION_RATE, groupTotals, saleTotals, type PartnershipSale } from '../lib/partnershipMath'
 import { supabase } from '../lib/supabaseClient'
 import type { Product } from './ProductsPage'
+import { getCompanySettings } from '../lib/pdfBranding'
+import { downloadPdf } from '../lib/sharePdf'
+import { generateGroupSalesPdf } from '../lib/generateGroupSalesPdf'
 
 const saleSchema = z.object({ month: z.string().min(1, 'Month is required'), product_id: z.string().nullable(), item_code: z.string().trim(), item_name: z.string().trim().min(1, 'Item name is required'), qty: z.number().min(0), cost_price: z.number().min(0), selling_price: z.number().min(0), return_qty: z.number().min(0) })
 type SaleValues = z.infer<typeof saleSchema>
@@ -40,12 +43,37 @@ function SaleForm({ group, row, products, commissionRate, close }: { group: 'A' 
 
 export function PartnershipGroupPage() {
   const { group: slug } = useParams(); const group = slug === 'group-a' ? 'A' : slug === 'group-b' ? 'B' : null
-  const [selectedMonth, setSelectedMonth] = useState('all'); const [editing, setEditing] = useState<PartnershipSale | 'new' | null>(null); const queryClient = useQueryClient()
+  const [selectedMonth, setSelectedMonth] = useState('all'); const [isDownloading, setIsDownloading] = useState(false); const [editing, setEditing] = useState<PartnershipSale | 'new' | null>(null); const queryClient = useQueryClient()
   const { data, isLoading, error } = useQuery({ queryKey: ['partnership-sales'], queryFn: fetchGroup }); useRealtimeRefresh(['partnership_sales','shared_expenses','products','company_settings'], ['partnership-sales','partnership','dashboard'])
   const months = useMemo(() => Array.from(new Set((data?.rows ?? []).map((row) => row.month?.slice(0,7)).filter(Boolean) as string[])).sort().reverse(), [data])
   if (!group) return <Navigate to="/partnership" replace />
   const rate = data?.commissionRate ?? DEFAULT_DISTRIBUTOR_COMMISSION_RATE; const rows = (data?.rows ?? []).filter((row) => row.group_label === group && (selectedMonth === 'all' || row.month?.startsWith(selectedMonth))); const totals = groupTotals(rows, rate)
   const allRows = (data?.rows ?? []).filter((row) => selectedMonth === 'all' || row.month?.startsWith(selectedMonth)); const combinedA = groupTotals(allRows.filter((row) => row.group_label === 'A'), rate); const combinedB = groupTotals(allRows.filter((row) => row.group_label === 'B'), rate)
   const remove = async (row: PartnershipSale) => { if (!window.confirm(`Delete ${row.item_name}?`)) return; const result = await supabase.from('partnership_sales').delete().eq('id',row.id); if (result.error) return toast.error(result.error.message); await queryClient.invalidateQueries({queryKey:['partnership-sales']}); toast.success('Sale deleted') }
-  return <><Link to="/partnership" className="mb-5 inline-flex items-center gap-2 text-on-surface-variant hover:text-primary"><ArrowLeft size={17}/>Partnership overview</Link><header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-md uppercase tracking-widest text-primary">Partnership sales</p><h2 className="mt-2 font-heading text-headline-lg">Group {group}</h2></div><div className="flex flex-col gap-3 sm:flex-row"><select value={selectedMonth} onChange={(event)=>setSelectedMonth(event.target.value)} className="input-base rounded-lg px-4"><option value="all">View All</option>{months.map((month)=><option key={month} value={month}>{month}</option>)}</select><button type="button" onClick={()=>setEditing('new')} className="primary-button flex items-center justify-center gap-2 px-5 py-3"><Plus size={18}/>Add Row</button></div></header><SummaryBar items={[{label:'Combined Total Revenue',value:money(combinedA.revenue+combinedB.revenue),icon:TrendingUp},{label:'Combined Total Profit',value:money(combinedA.profit+combinedB.profit),icon:Handshake}]} /><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">{[['Total Cost',totals.cost],['Total Revenue',totals.revenue],['Bounce Cost',totals.bounceCost],[`Distributor Commission (${(rate*100).toFixed(0)}%)`,totals.distributorCommission],['Group Profit',totals.profit],['Margin',totals.margin]].map(([label,value],index)=><div key={String(label)} className="glass-card rounded-xl p-5"><p className="text-label-md uppercase text-on-surface-variant">{label}</p><p className="mt-2 font-heading text-headline-sm text-primary">{index===5?`${asNumber(value).toFixed(1)}%`:money(asNumber(value))}</p></div>)}</div><div className="glass-card rounded-xl p-5">{error&&<p className="text-error">{error.message}</p>}<div className="overflow-x-auto"><table className="data-table mobile-card-table table-partnership"><thead><tr><th>Sr#</th><th>Month</th><th>Item Code</th><th>Item Name</th><th>Qty</th><th>Cost</th><th>Sale</th><th>Return Qty</th><th>Commission</th><th>Profit</th><th></th></tr></thead><tbody>{isLoading?<tr><td colSpan={11}>Loading...</td></tr>:rows.length?rows.map((row,index)=>{const value=saleTotals(row,rate);return <tr key={row.id}><td>{index+1}</td><td>{row.month?.slice(0,7)}</td><td>{row.item_code}</td><td>{row.item_name}</td><td>{asNumber(row.qty)}</td><td>{money(asNumber(row.cost_price))}</td><td>{money(asNumber(row.selling_price))}</td><td>{asNumber(row.return_qty)}</td><td>{money(value.distributorCommission)}</td><td>{money(value.profit)}</td><td><div className="flex"><button className="icon-button" onClick={()=>setEditing(row)}><Pencil size={16}/></button><button className="icon-button hover:text-error" onClick={()=>remove(row)}><Trash2 size={16}/></button></div></td></tr>}):<tr><td colSpan={11} className="py-12 text-center">No rows for this month.</td></tr>}</tbody></table></div></div>{editing&&<Modal title={editing==='new'?`Add Group ${group} rows`:'Edit sale'} onClose={()=>setEditing(null)}><SaleForm group={group} row={editing==='new'?undefined:editing} products={data?.products??[]} commissionRate={rate} close={()=>setEditing(null)}/></Modal>}</>
+  const handleDownloadPdf = async () => {
+    if (!data || !group) return
+    setIsDownloading(true)
+    try {
+      const company = await getCompanySettings()
+      let periodLabel = 'All Time (Consolidated)'
+      if (selectedMonth !== 'all') {
+        const [year, month] = selectedMonth.split('-')
+        const date = new Date(Number(year), Number(month) - 1, 1)
+        periodLabel = date.toLocaleString('en', { month: 'long', year: 'numeric' })
+      }
+      const doc = await generateGroupSalesPdf({
+        group,
+        periodLabel,
+        rows,
+        commissionRate: rate,
+      }, company)
+      downloadPdf(doc, `group-${group.toLowerCase()}-sales-${selectedMonth}.pdf`)
+      toast.success(`Group ${group} sales PDF downloaded`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download PDF')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+  return <><Link to="/partnership" className="mb-5 inline-flex items-center gap-2 text-on-surface-variant hover:text-primary"><ArrowLeft size={17}/>Partnership overview</Link><header className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-md uppercase tracking-widest text-primary">Partnership sales</p><h2 className="mt-2 font-heading text-headline-lg">Group {group}</h2></div><div className="flex flex-col gap-3 sm:flex-row"><select value={selectedMonth} onChange={(event)=>setSelectedMonth(event.target.value)} className="input-base rounded-lg px-4"><option value="all">View All</option>{months.map((month)=><option key={month} value={month}>{month}</option>)}</select><button type="button" disabled={isDownloading || !data} onClick={handleDownloadPdf} className="secondary-button flex items-center justify-center gap-2 px-4 py-3"><ArrowDownToLine size={18} />{isDownloading ? 'Preparing...' : 'Download PDF'}</button><button type="button" onClick={()=>setEditing('new')} className="primary-button flex items-center justify-center gap-2 px-5 py-3"><Plus size={18}/>Add Row</button></div></header><SummaryBar items={[{label:'Combined Total Revenue',value:money(combinedA.revenue+combinedB.revenue),icon:TrendingUp},{label:'Combined Total Profit',value:money(combinedA.profit+combinedB.profit),icon:Handshake}]} /><div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">{[['Total Cost',totals.cost],['Total Revenue',totals.revenue],['Bounce Cost',totals.bounceCost],[`Distributor Commission (${(rate*100).toFixed(0)}%)`,totals.distributorCommission],['Group Profit',totals.profit],['Margin',totals.margin]].map(([label,value],index)=><div key={String(label)} className="glass-card rounded-xl p-5"><p className="text-label-md uppercase text-on-surface-variant">{label}</p><p className="mt-2 font-heading text-headline-sm text-primary">{index===5?`${asNumber(value).toFixed(1)}%`:money(asNumber(value))}</p></div>)}</div><div className="glass-card rounded-xl p-5">{error&&<p className="text-error">{error.message}</p>}<div className="overflow-x-auto"><table className="data-table mobile-card-table table-partnership"><thead><tr><th>Sr#</th><th>Month</th><th>Item Code</th><th>Item Name</th><th>Qty</th><th>Cost</th><th>Sale</th><th>Return Qty</th><th>Commission</th><th>Profit</th><th></th></tr></thead><tbody>{isLoading?<tr><td colSpan={11}>Loading...</td></tr>:rows.length?rows.map((row,index)=>{const value=saleTotals(row,rate);return <tr key={row.id}><td>{index+1}</td><td>{row.month?.slice(0,7)}</td><td>{row.item_code}</td><td>{row.item_name}</td><td>{asNumber(row.qty)}</td><td>{money(asNumber(row.cost_price))}</td><td>{money(asNumber(row.selling_price))}</td><td>{asNumber(row.return_qty)}</td><td>{money(value.distributorCommission)}</td><td>{money(value.profit)}</td><td><div className="flex"><button className="icon-button" onClick={()=>setEditing(row)}><Pencil size={16}/></button><button className="icon-button hover:text-error" onClick={()=>remove(row)}><Trash2 size={16}/></button></div></td></tr>}):<tr><td colSpan={11} className="py-12 text-center">No rows for this month.</td></tr>}</tbody></table></div></div>{editing&&<Modal title={editing==='new'?`Add Group ${group} rows`:'Edit sale'} onClose={()=>setEditing(null)}><SaleForm group={group} row={editing==='new'?undefined:editing} products={data?.products??[]} commissionRate={rate} close={()=>setEditing(null)}/></Modal>}</>
 }
