@@ -1,7 +1,7 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Building2, Pencil, Plus, Search, Send, Trash2, WalletCards } from 'lucide-react'
+import { ArrowLeft, Building2, Download, Pencil, Plus, Search, Send, Trash2, WalletCards } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -14,6 +14,7 @@ import { asNumber, money, shortDate } from '../lib/format'
 import { monthTag } from '../lib/partnershipMath'
 import { supabase } from '../lib/supabaseClient'
 import { generateLedgerPdf } from '../lib/generateLedgerPdf'
+import { generateMonthlySummaryPdf } from '../lib/generateCustomersSummaryPdf'
 import { getCompanySettings } from '../lib/pdfBranding'
 import { sharePdf } from '../lib/sharePdf'
 
@@ -38,10 +39,114 @@ export function VendorsPage() {
 }
 
 function VendorMonthlySummary({ vendors }: { vendors: Vendor[] }) {
-  const year = new Date().getFullYear()
-  const months = Array.from({ length: 12 }, (_, index) => ({ index, label: new Date(year, index).toLocaleString('en', { month: 'short' }) }))
-  const monthValues = (vendor: Vendor, month: number) => vendor.vendor_ledger.filter((row) => { const date = new Date(`${row.entry_date}T00:00:00`); return date.getFullYear() === year && date.getMonth() === month }).reduce((sum, row) => ({ debit: sum.debit + asNumber(row.debit), credit: sum.credit + asNumber(row.credit) }), { debit: 0, credit: 0 })
-  return <section className="mt-8 glass-card rounded-xl p-5"><h3 className="font-heading text-headline-sm">Vendor Monthly Summary - {year}</h3><p className="mb-4 text-body-sm text-on-surface-variant">Monthly purchases and recovery (payments made) for every vendor.</p><div className="overflow-x-auto"><table className="data-table min-w-max text-xs"><thead><tr><th rowSpan={2} className="sticky left-0 z-20 bg-surface-container">Month</th>{vendors.map((vendor) => <th key={vendor.id} colSpan={2} className="text-center">{vendor.name}</th>)}<th colSpan={2} className="text-center">Monthly Total</th></tr><tr>{vendors.flatMap((vendor) => [<th key={`${vendor.id}-d`}>Debit</th>,<th key={`${vendor.id}-c`}>Recovery (Paid)</th>])}<th>Total Debit</th><th>Total Recovery (Paid)</th></tr></thead><tbody>{months.map((month) => { const values = vendors.map((vendor) => monthValues(vendor, month.index)); const debit = values.reduce((sum, value) => sum + value.debit, 0); const credit = values.reduce((sum, value) => sum + value.credit, 0); return <tr key={month.index}><td className="sticky left-0 bg-surface-container font-semibold">{month.label}</td>{values.flatMap((value,index) => [<td key={`${index}-d`} className="text-error">{value.debit ? money(value.debit) : '-'}</td>,<td key={`${index}-c`} className="text-primary">{value.credit ? money(value.credit) : '-'}</td>])}<td className="font-semibold text-error">{money(debit)}</td><td className="font-semibold text-primary">{money(credit)}</td></tr> })}<tr className="font-bold"><td className="sticky left-0 bg-surface-container">GRAND TOTAL</td>{vendors.flatMap((vendor) => { const values = months.map((month) => monthValues(vendor, month.index)); return [<td key={`${vendor.id}-gd`} className="text-error">{money(values.reduce((sum,value) => sum + value.debit,0))}</td>,<td key={`${vendor.id}-gc`} className="text-primary">{money(values.reduce((sum,value) => sum + value.credit,0))}</td>] })}<td className="text-error">{money(vendors.reduce((all,vendor) => all + vendor.vendor_ledger.filter((row) => new Date(`${row.entry_date}T00:00:00`).getFullYear() === year).reduce((sum,row) => sum + asNumber(row.debit),0),0))}</td><td className="text-primary">{money(vendors.reduce((all,vendor) => all + vendor.vendor_ledger.filter((row) => new Date(`${row.entry_date}T00:00:00`).getFullYear() === year).reduce((sum,row) => sum + asNumber(row.credit),0),0))}</td></tr></tbody></table></div></section>
+  const { isSharing, runPdfShare } = usePdfShare()
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const year = parseInt(selectedMonth.split('-')[0], 10)
+  const monthIndex = parseInt(selectedMonth.split('-')[1], 10) - 1
+  const monthName = new Date(year, monthIndex).toLocaleString('en', { month: 'long', year: 'numeric' })
+
+  const summaryRows = useMemo(() => {
+    return vendors.map(vendor => {
+      const rows = vendor.vendor_ledger.filter((row) => {
+        const date = new Date(`${row.entry_date}T00:00:00`)
+        return date.getFullYear() === year && date.getMonth() === monthIndex
+      })
+      const debit = rows.reduce((sum, row) => sum + asNumber(row.debit), 0)
+      const credit = rows.reduce((sum, row) => sum + asNumber(row.credit), 0)
+      return { id: vendor.id, name: vendor.name, debit, credit }
+    })
+  }, [vendors, year, monthIndex])
+
+  const totalDebit = useMemo(() => summaryRows.reduce((sum, row) => sum + row.debit, 0), [summaryRows])
+  const totalCredit = useMemo(() => summaryRows.reduce((sum, row) => sum + row.credit, 0), [summaryRows])
+
+  const downloadPdf = () => {
+    void runPdfShare(async () => {
+      const company = await getCompanySettings()
+      const doc = await generateMonthlySummaryPdf(summaryRows, monthName, company, {
+        title: 'VENDOR SUMMARY',
+        entityLabel: 'VENDOR',
+        debitLabel: 'DEBIT (PURCHASE)',
+        creditLabel: 'RECOVERY (PAID)',
+      })
+      doc.save(`vendor-monthly-summary-${selectedMonth}.pdf`)
+      return 'downloaded'
+    })
+  }
+
+  return (
+    <section className="mt-8 glass-card rounded-xl p-5">
+      <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h3 className="font-heading text-headline-sm">Vendor Monthly Summary - {monthName}</h3>
+          <p className="mt-1 text-body-sm text-on-surface-variant">
+            Monthly purchases and recovery (payments made) for every vendor.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="input-base px-3 py-2"
+          />
+          <button
+            onClick={downloadPdf}
+            disabled={isSharing}
+            className="secondary-button flex items-center gap-2 px-4 py-2"
+          >
+            <Download size={17} />
+            {isSharing ? 'Generating...' : 'Download PDF'}
+          </button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="data-table mobile-card-table text-sm">
+          <thead>
+            <tr>
+              <th>Sr#</th>
+              <th>Vendor</th>
+              <th className="text-right">Debit (Purchases)</th>
+              <th className="text-right">Recovery (Paid)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summaryRows.length ? (
+              summaryRows.map((row, index) => (
+                <tr key={row.id}>
+                  <td>{index + 1}</td>
+                  <td className="font-medium">
+                    <Link to={`/vendors/${row.id}`} className="hover:text-primary">
+                      {row.name}
+                    </Link>
+                  </td>
+                  <td className="text-right text-error">{row.debit ? money(row.debit) : '-'}</td>
+                  <td className="text-right text-primary">{row.credit ? money(row.credit) : '-'}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="py-8 text-center text-on-surface-variant">
+                  No vendors found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="font-bold">
+              <td></td>
+              <td>TOTAL SUMMARY</td>
+              <td className="text-right text-error">{money(totalDebit)}</td>
+              <td className="text-right text-primary">{money(totalCredit)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  )
 }
 function LedgerForm({ vendorId, row, close }: { vendorId: string; row?: Ledger; close: () => void }) { const queryClient = useQueryClient(); const { register, handleSubmit, formState: { errors, isValid } } = useForm<LedgerValues>({ resolver: zodResolver(ledgerSchema), mode: 'onChange', defaultValues: { entry_date: row?.entry_date ?? new Date().toISOString().slice(0,10), description: row?.description ?? '', debit: asNumber(row?.debit), credit: asNumber(row?.credit) } }); const mutation = useMutation({ mutationFn: async (values: LedgerValues) => { const payload = { ...values, vendor_id: vendorId }; const result = row ? await supabase.from('vendor_ledger').update(payload).eq('id', row.id) : await supabase.from('vendor_ledger').insert(payload); if (result.error) throw result.error }, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['vendor', vendorId] }); queryClient.invalidateQueries({ queryKey: ['vendors'] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }); toast.success('Vendor ledger saved'); close() }, onError: (error) => toast.error(error.message) }); return <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-5"><label className="form-label">Date<input {...register('entry_date')} type="date" className="input-base form-input" />{errors.entry_date && <span className="form-error">{errors.entry_date.message}</span>}</label><label className="form-label">Description<input {...register('description')} className="input-base form-input" />{errors.description && <span className="form-error">{errors.description.message}</span>}</label><div className="grid gap-4 md:grid-cols-2"><label className="form-label">Debit (purchase/owed)<input {...register('debit', { valueAsNumber: true })} type="number" min="0" step="0.01" className="input-base form-input" />{errors.debit && <span className="form-error">{errors.debit.message}</span>}</label><label className="form-label">Credit (paid)<input {...register('credit', { valueAsNumber: true })} type="number" min="0" step="0.01" className="input-base form-input" />{errors.credit && <span className="form-error">{errors.credit.message}</span>}</label></div><div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" className="secondary-button" onClick={close}>Cancel</button><button disabled={!isValid || mutation.isPending} className="primary-button px-5 py-2.5">Save entry</button></div></form> }
 

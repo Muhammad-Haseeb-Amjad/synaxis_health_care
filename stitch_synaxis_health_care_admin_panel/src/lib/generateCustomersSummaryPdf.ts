@@ -41,9 +41,20 @@ export async function generateCustomersSummaryPdf(rows: CustomerSummaryRow[], to
 
 export type MonthlySummaryRow = { name: string; debit: number; credit: number }
 
-export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], monthName: string, company: CompanySettings) {
+export async function generateMonthlySummaryPdf(
+  rows: MonthlySummaryRow[],
+  monthName: string,
+  company: CompanySettings,
+  options?: {
+    title?: string
+    entityLabel?: string
+    debitLabel?: string
+    creditLabel?: string
+  }
+) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-  await drawBrandHeader(doc, company, 'MONTHLY SUMMARY')
+  const title = options?.title ?? 'MONTHLY SUMMARY'
+  await drawBrandHeader(doc, company, title)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(71, 85, 105)
@@ -51,10 +62,14 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
   const totalDebit = rows.reduce((sum, row) => sum + row.debit, 0)
   const totalCredit = rows.reduce((sum, row) => sum + row.credit, 0)
 
+  const entityCol = options?.entityLabel ?? 'CUSTOMER'
+  const debitCol = options?.debitLabel ?? 'DEBIT'
+  const creditCol = options?.creditLabel ?? 'CREDIT'
+
   autoTable(doc, {
     startY: 48,
     margin: { left: 14, right: 14 },
-    head: [['SR#', 'CUSTOMER', 'DEBIT', 'CREDIT']],
+    head: [['SR#', entityCol, debitCol, creditCol]],
     body: rows.map((row, index) => [
       String(index + 1), 
       row.name, 
@@ -72,6 +87,16 @@ export async function generateMonthlySummaryPdf(rows: MonthlySummaryRow[], month
       3: { halign: 'right' }
     },
   })
+
+  const pages = doc.getNumberOfPages()
+  for (let page = 1; page <= pages; page += 1) {
+    doc.setPage(page)
+    doc.setFontSize(7)
+    doc.setTextColor(148, 163, 184)
+    doc.text(company.company_name, 14, 288)
+    doc.text(`Page ${page} of ${pages}`, 105, 288, { align: 'center' })
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, 196, 288, { align: 'right' })
+  }
   
   return doc
 }
