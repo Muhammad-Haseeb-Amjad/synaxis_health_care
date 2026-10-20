@@ -40,25 +40,30 @@ export function VendorsPage() {
 
 function VendorMonthlySummary({ vendors }: { vendors: Vendor[] }) {
   const { isSharing, runPdfShare } = usePdfShare()
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  const defaultMonth = useMemo(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })
-  const year = parseInt(selectedMonth.split('-')[0], 10)
-  const monthIndex = parseInt(selectedMonth.split('-')[1], 10) - 1
-  const monthName = new Date(year, monthIndex).toLocaleString('en', { month: 'long', year: 'numeric' })
+  }, [])
+  const [selectedMonth, setSelectedMonth] = useState<string>(defaultMonth)
+  const isAll = selectedMonth === 'all'
+
+  const year = isAll ? new Date().getFullYear() : parseInt(selectedMonth.split('-')[0], 10)
+  const monthIndex = isAll ? 0 : parseInt(selectedMonth.split('-')[1], 10) - 1
+  const monthName = isAll ? 'All Time (Overall)' : new Date(year, monthIndex).toLocaleString('en', { month: 'long', year: 'numeric' })
 
   const summaryRows = useMemo(() => {
     return vendors.map(vendor => {
-      const rows = vendor.vendor_ledger.filter((row) => {
-        const date = new Date(`${row.entry_date}T00:00:00`)
-        return date.getFullYear() === year && date.getMonth() === monthIndex
-      })
+      const rows = isAll
+        ? vendor.vendor_ledger
+        : vendor.vendor_ledger.filter((row) => {
+            const date = new Date(`${row.entry_date}T00:00:00`)
+            return date.getFullYear() === year && date.getMonth() === monthIndex
+          })
       const debit = rows.reduce((sum, row) => sum + asNumber(row.debit), 0)
       const credit = rows.reduce((sum, row) => sum + asNumber(row.credit), 0)
       return { id: vendor.id, name: vendor.name, debit, credit }
     })
-  }, [vendors, year, monthIndex])
+  }, [vendors, isAll, year, monthIndex])
 
   const totalDebit = useMemo(() => summaryRows.reduce((sum, row) => sum + row.debit, 0), [summaryRows])
   const totalCredit = useMemo(() => summaryRows.reduce((sum, row) => sum + row.credit, 0), [summaryRows])
@@ -72,7 +77,8 @@ function VendorMonthlySummary({ vendors }: { vendors: Vendor[] }) {
         debitLabel: 'DEBIT (PURCHASE)',
         creditLabel: 'RECOVERY (PAID)',
       })
-      doc.save(`vendor-monthly-summary-${selectedMonth}.pdf`)
+      const filename = isAll ? 'vendor-summary-all-time.pdf' : `vendor-monthly-summary-${selectedMonth}.pdf`
+      doc.save(filename)
       return 'downloaded'
     })
   }
@@ -81,17 +87,31 @@ function VendorMonthlySummary({ vendors }: { vendors: Vendor[] }) {
     <section className="mt-8 glass-card rounded-xl p-5">
       <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h3 className="font-heading text-headline-sm">Vendor Monthly Summary - {monthName}</h3>
+          <h3 className="font-heading text-headline-sm">
+            {isAll ? 'Vendor Summary - All Time' : `Vendor Monthly Summary - ${monthName}`}
+          </h3>
           <p className="mt-1 text-body-sm text-on-surface-variant">
-            Monthly purchases and recovery (payments made) for every vendor.
+            {isAll ? 'All purchases and recovery (payments made) for every vendor.' : 'Monthly purchases and recovery (payments made) for every vendor.'}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedMonth(isAll ? defaultMonth : 'all')}
+            className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+              isAll
+                ? 'bg-primary text-on-primary shadow-sm'
+                : 'secondary-button'
+            }`}
+          >
+            {isAll ? '✓ View All' : 'View All'}
+          </button>
           <input
             type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="input-base px-3 py-2"
+            value={isAll ? '' : selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value || 'all')}
+            className="input-base px-3 py-1.5 text-sm"
+            title="Pick month"
           />
           <button
             onClick={downloadPdf}
